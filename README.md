@@ -1,91 +1,99 @@
-# Draw The Shape Game
+# Draw the Shape - Interactive Drawing Game
 
-A fun drawing game that uses hand gestures to draw shapes. The game uses Python for hand tracking and React for the frontend interface.
+An interactive drawing game designed to help children with dyslexia improve their motor skills and shape recognition through hand gesture-based interactions.
+
+## Features
+
+- Real-time hand tracking and gesture recognition
+- Interactive shape drawing exercises
+- Multiple shape options
+- Color selection
+- Clear gesture functionality
+- Beginner-friendly interface
+- Dyslexia-friendly design
+
+## Tech Stack
+
+- React.js for the frontend
+- TensorFlow.js for hand tracking
+- Python/Flask for the backend
+- MediaPipe for gesture recognition
+- HTML Canvas for drawing
 
 ## Prerequisites
 
 - Node.js (v14 or higher)
-- Python (v3.8 or higher)
-- pip (Python package manager)
-- Webcam
+- Python 3.8+
+- npm or yarn
+- Webcam access
 
-## Setup
+## Installation
 
-### Backend Setup
-
-1. Navigate to the backend directory:
+1. Clone the repository:
 ```bash
-cd backend
+git clone https://github.com/sarahalie/fyp-airplaygamedts.git
+cd fyp-airplaygamedts
 ```
 
-2. Create a Python virtual environment:
-```bash
-python -m venv venv
-```
-
-3. Activate the virtual environment:
-- On Windows:
-```bash
-.\venv\Scripts\activate
-```
-- On macOS/Linux:
-```bash
-source venv/bin/activate
-```
-
-4. Install Python dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-### Frontend Setup
-
-1. Navigate to the project root directory:
-```bash
-cd ..
-```
-
-2. Install Node.js dependencies:
+2. Install frontend dependencies:
 ```bash
 npm install
 ```
 
+3. Install backend dependencies:
+```bash
+cd backend
+pip install -r requirements.txt
+```
+
 ## Running the Application
 
-1. Start the Python backend server (in one terminal):
+1. Start the backend server:
 ```bash
 cd backend
 python app.py
 ```
 
-2. Start the React frontend (in another terminal):
+2. In a new terminal, start the frontend:
 ```bash
 npm start
 ```
 
-3. Open your browser and navigate to `http://localhost:3000`
+The application will be available at http://localhost:3000
 
-## How to Play
+## Project Structure
 
-1. Click the "Hand Mode" button to enable hand tracking
-2. Use your hand gestures to draw:
-   - Point to the top menu to select colors
-   - Raise your index finger to draw
-   - Pinch your thumb and index finger together to clear the canvas
-3. Try to draw the shapes shown on screen!
+```
+draw-the-shape-cpy/
+├── public/              # Static files
+│   ├── hands.js        # Hand tracking library
+│   └── assets/         # Images and sounds
+├── src/                # React source files
+│   ├── App.js         # Main application component
+│   ├── components/    # React components
+│   └── utils/         # Utility functions
+├── backend/           # Python Flask backend
+│   ├── app.py        # Main server file
+│   └── requirements.txt # Python dependencies
+└── package.json      # Project dependencies
+```
 
-## Troubleshooting
+## Game Instructions
 
-If you encounter any issues:
+1. Enable camera access when prompted
+2. Select a shape to draw
+3. Choose your preferred color
+4. Use your hand to trace the shape
+5. Show all fingers to clear the canvas
 
-1. Make sure both the backend and frontend servers are running
-2. Check that your webcam is properly connected and accessible
-3. Ensure you have granted webcam permissions to your browser
-4. Try refreshing the page if hand tracking isn't working
+## Contributing
 
-## Technical Details
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-- Frontend: React.js
-- Backend: Python with Flask and WebSocket
-- Hand Tracking: MediaPipe Hands
-- Video Processing: OpenCV
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

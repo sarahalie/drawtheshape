@@ -22,6 +22,7 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.log
 
 # Python
 __pycache__/
@@ -44,8 +45,18 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-.env
 
 # Virtual Environment
 venv/
 ENV/
+env/
+env.bak/
+venv.bak/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*.swn
+*.bak
