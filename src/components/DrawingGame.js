@@ -389,7 +389,7 @@ const DrawingGame = ({ theme, level, onSuccess }) => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentPath, setCurrentPath] = useState([]);
   const [drawnPaths, setDrawnPaths] = useState([]);
-  const [currentColor, setCurrentColor] = useState('#4D96FF');
+  const [currentColor, setCurrentColor] = useState('#C5D3E8');
   const [isErasing, setIsErasing] = useState(false);
   const [selectedShape, setSelectedShape] = useState(null);
   const [hasDrawn, setHasDrawn] = useState(false);
@@ -430,10 +430,10 @@ const DrawingGame = ({ theme, level, onSuccess }) => {
   }, [theme, level]);
 
   const colors = {
-    blue: '#C5D3E8',    // Dyslexia-friendly blue
-    green: '#B1C29E',   // Dyslexia-friendly green
-    peach: '#FFD6BA',     // Dyslexia-friendly red
-    yellow: '#FADFA1'   // Dyslexia-friendly yellow
+    blue: '#C5D3E8',    // Light blue
+    green: '#B1C29E',   // Light green
+    peach: '#FFD6BA',   // Peach
+    yellow: '#FADFA1'   // Light yellow
   };
 
   const redrawPaths = () => {
@@ -462,6 +462,23 @@ const DrawingGame = ({ theme, level, onSuccess }) => {
     
     const shape = getShape(themeRef.current, levelRef.current);
     if (!shape) return;
+
+    // Calculate canvas center
+    const centerX = ctx.canvas.width / 2;
+    const centerY = ctx.canvas.height / 2;
+
+    // Save the current context state
+    ctx.save();
+    
+    // Move to center
+    ctx.translate(centerX, centerY);
+    
+    // Scale to fit within the canvas while maintaining aspect ratio
+    const scale = Math.min(ctx.canvas.width / 800, ctx.canvas.height / 400) * 0.8;
+    ctx.scale(scale, scale);
+    
+    // Translate back to keep shapes centered
+    ctx.translate(-400, -200);
 
     // Draw helper points first
     if (shape.helperPoints) {
@@ -512,6 +529,10 @@ const DrawingGame = ({ theme, level, onSuccess }) => {
             part.end[0], part.end[1]
           );
           ctx.stroke();
+        } else if (part.type === 'arc') {
+          ctx.beginPath();
+          ctx.arc(part.center[0], part.center[1], part.radius, part.startAngle, part.endAngle);
+          ctx.stroke();
         } else if (part.points) {
           ctx.beginPath();
           ctx.moveTo(part.points[0][0], part.points[0][1]);
@@ -532,24 +553,48 @@ const DrawingGame = ({ theme, level, onSuccess }) => {
       }
       ctx.stroke();
     }
+
+    // Restore the context state
+    ctx.restore();
   };
 
   const drawSelectedShape = (shapeIndex) => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    if (!canvas) return;
     
-    // Clear the canvas
+    const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    const shape = SHAPES[themeRef.current][shapeIndex];
-    if (!shape) return;
-
-    ctx.strokeStyle = '#CCCCCC';
+    // Get shapes from the current theme
+    const shapes = SHAPES[themeRef.current];
+    if (!shapes || !shapes[shapeIndex]) return;
+    
+    const shape = shapes[shapeIndex];
+    
+    // Draw the shape in grey
+    ctx.strokeStyle = '#808080';
     ctx.lineWidth = 2;
-
+    
+    // Save the current context state
+    ctx.save();
+    
+    // Calculate canvas center
+    const centerX = ctx.canvas.width / 2;
+    const centerY = ctx.canvas.height / 2;
+    
+    // Move to center
+    ctx.translate(centerX, centerY);
+    
+    // Scale to fit within the canvas while maintaining aspect ratio
+    const scale = Math.min(ctx.canvas.width / 800, ctx.canvas.height / 400) * 0.8;
+    ctx.scale(scale, scale);
+    
+    // Translate back to keep shapes centered
+    ctx.translate(-400, -200);
+    
     if (shape.type === 'circle') {
       ctx.beginPath();
-      ctx.arc(shape.center[0], shape.center[1], shape.radius, 0, Math.PI * 2);
+      ctx.arc(shape.center[0], shape.center[1], shape.radius, 0, 2 * Math.PI);
       ctx.stroke();
     } else if (shape.type === 'composite') {
       shape.parts.forEach(part => {
@@ -562,6 +607,10 @@ const DrawingGame = ({ theme, level, onSuccess }) => {
             part.end[0], part.end[1]
           );
           ctx.stroke();
+        } else if (part.type === 'arc') {
+          ctx.beginPath();
+          ctx.arc(part.center[0], part.center[1], part.radius, part.startAngle, part.endAngle);
+          ctx.stroke();
         } else if (part.points) {
           ctx.beginPath();
           ctx.moveTo(part.points[0][0], part.points[0][1]);
@@ -571,17 +620,35 @@ const DrawingGame = ({ theme, level, onSuccess }) => {
           ctx.stroke();
         }
       });
-    } else if (shape.points) {
+    } else {
       ctx.beginPath();
       ctx.moveTo(shape.points[0][0], shape.points[0][1]);
       for (let i = 1; i < shape.points.length; i++) {
         ctx.lineTo(shape.points[i][0], shape.points[i][1]);
       }
-      if (shape.closed !== false) {
-        ctx.closePath();
-      }
+      ctx.closePath();
       ctx.stroke();
     }
+    
+    // Restore the context state
+    ctx.restore();
+  };
+
+  const handleShapeSelect = (shapeIndex) => {
+    setSelectedShape(shapeIndex);
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    
+    // Clear the canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw the newly selected shape from the current theme
+    drawSelectedShape(shapeIndex);
+    
+    // Reset drawing state
+    setCurrentPath([]);
+    setDrawnPaths([]);
+    setHasDrawn(false);
   };
 
   useEffect(() => {
@@ -645,12 +712,6 @@ const DrawingGame = ({ theme, level, onSuccess }) => {
     setIsErasing(!isErasing);
   };
 
-  const handleShapeSelect = (shapeIndex) => {
-    setSelectedShape(shapeIndex);
-    drawSelectedShape(shapeIndex);
-    setHasDrawn(false);
-  };
-
   const startDrawing = (e) => {
     if (!startTime) {
       setStartTime(Date.now());
@@ -696,21 +757,27 @@ const DrawingGame = ({ theme, level, onSuccess }) => {
     setDrawnPaths(prev => [...prev, { points: currentPath, color: currentColor, isEraser: isErasing }]);
   };
 
-  const handleReset = () => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    if (selectedShape !== null) {
-      drawSelectedShape(selectedShape);
-    } else {
-      drawGuideShape(ctx);
-    }
-    
+  const clearDrawing = () => {
+    // Reset only drawing-related state
     setCurrentPath([]);
     setDrawnPaths([]);
     setHasDrawn(false);
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Store the current canvas state
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    
+    // Clear only the user's drawing paths
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Redraw the guide shape in its current state
+    if (selectedShape !== null) {
+      drawSelectedShape(selectedShape);
+    }
   };
 
   const handleFinish = async () => {
@@ -896,54 +963,108 @@ const DrawingGame = ({ theme, level, onSuccess }) => {
   }, [currentColor]);
 
   // Update the hand movement handler
-  const handleHandMove = ({ x, y, isDrawing, isSelecting, pressure = 1 }) => {
-    if (!canvasRef.current) return;
-
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
+  const handleHandPosition = (data) => {
+    const { offsetX, offsetY, isDrawing, isSelecting, gesture, isRelativePosition } = data;
     
-    // Convert screen coordinates to canvas coordinates
-    const canvasX = x - rect.left;
-    const canvasY = y - rect.top;
+    // Get the main canvas and its context
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Calculate the center point of the canvas
+    const canvasCenterX = canvas.width / 2;
+    const canvasCenterY = canvas.height / 2;
 
-    if (isDrawing) {
-      const ctx = canvas.getContext('2d');
-      
+    let canvasX, canvasY;
+    
+    if (isRelativePosition) {
+      // Map the relative offset (-1 to 1) to canvas coordinates
+      const range = 200;
+      canvasX = canvasCenterX + (-offsetX * range);
+      canvasY = canvasCenterY + (offsetY * range);
+    } else {
+      const rect = canvas.getBoundingClientRect();
+      canvasX = canvas.width - ((data.x - rect.left) / rect.width) * canvas.width;
+      canvasY = ((data.y - rect.top) / rect.height) * canvas.height;
+    }
+
+    // Handle gestures first
+    if (gesture) {
+      switch (gesture) {
+        case "colorPicker":
+          if (data.raisedFingers === 1) {
+            handleColorChange(colors.blue);
+          } else if (data.raisedFingers === 2) {
+            handleColorChange(colors.green);
+          } else if (data.raisedFingers === 3) {
+            handleColorChange(colors.peach);
+          } else if (data.raisedFingers === 4) {
+            handleColorChange(colors.yellow);
+          }
+          break;
+        case "draw":
+          setIsErasing(false);
+          break;
+        case "clear":
+          // Only reset the drawing state variables
+          setCurrentPath([]);
+          setDrawnPaths([]);
+          setHasDrawn(false);
+          isDrawingRef.current = false;
+          currentPathRef.current = [];
+          pathsRef.current = [];
+          break;
+        default:
+          break;
+      }
+    }
+
+    // Handle drawing after gesture processing
+    if (isDrawing && canvasX >= 0 && canvasX <= canvas.width && canvasY >= 0 && canvasY <= canvas.height) {
       if (!isDrawingRef.current) {
-        // Start a new path when drawing begins
+        // Start new path
         ctx.beginPath();
         ctx.moveTo(canvasX, canvasY);
         isDrawingRef.current = true;
         currentPathRef.current = [{ x: canvasX, y: canvasY }];
-      } else {
-        // Continue the path
-        ctx.lineTo(canvasX, canvasY);
+        
+        // Apply current color and style
         ctx.strokeStyle = currentColor;
-        ctx.lineWidth = isErasing ? 20 : 3;
+        ctx.lineWidth = 3;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-        ctx.stroke();
-        currentPathRef.current.push({ x: canvasX, y: canvasY });
       }
-    } else {
+      
+      // Continue drawing with current color
+      ctx.lineTo(canvasX, canvasY);
+      ctx.strokeStyle = currentColor;
+      ctx.stroke();
+      currentPathRef.current.push({ x: canvasX, y: canvasY });
+      setHasDrawn(true);
+    } else if (isDrawingRef.current) {
+      // End the current path
       isDrawingRef.current = false;
       if (currentPathRef.current.length > 0) {
         pathsRef.current.push({
           points: currentPathRef.current,
           color: currentColor,
-          isErasing
+          isErasing: false
         });
         currentPathRef.current = [];
       }
     }
 
-    // Handle shape selection with isSelecting gesture
+    // Handle shape selection with mirrored coordinates
     if (isSelecting) {
-      const shapes = document.querySelectorAll('.shape-preview');
+      const shapes = document.querySelectorAll('.shape-option');
       shapes.forEach((shape, index) => {
         const shapeRect = shape.getBoundingClientRect();
-        if (x >= shapeRect.left && x <= shapeRect.right &&
-            y >= shapeRect.top && y <= shapeRect.bottom) {
+        const shapeX = window.innerWidth - (canvasX + canvas.getBoundingClientRect().left);
+        const shapeY = canvasY + canvas.getBoundingClientRect().top;
+        if (shapeX >= shapeRect.left && shapeX <= shapeRect.right &&
+            shapeY >= shapeRect.top && shapeY <= shapeRect.bottom) {
+          // Select shape from current theme
           handleShapeSelect(index);
         }
       });
@@ -962,7 +1083,7 @@ const DrawingGame = ({ theme, level, onSuccess }) => {
         toggleEraser();
         break;
       case 'clear':
-        handleReset();
+        clearDrawing();
         break;
       default:
         break;
@@ -997,79 +1118,6 @@ const DrawingGame = ({ theme, level, onSuccess }) => {
     };
   }, []);
 
-  const handleHandPosition = (data) => {
-    const { x, y, isDrawing, isSelecting, gesture } = data;
-    
-    // Convert coordinates to canvas space
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const rect = canvas.getBoundingClientRect();
-    const canvasX = x - rect.left;
-    const canvasY = y - rect.top;
-
-    // Handle drawing
-    if (isDrawing) {
-      const ctx = canvas.getContext('2d');
-      
-      if (!isDrawingRef.current) {
-        ctx.beginPath();
-        ctx.moveTo(canvasX, canvasY);
-        isDrawingRef.current = true;
-        currentPathRef.current = [{ x: canvasX, y: canvasY }];
-      } else {
-        ctx.lineTo(canvasX, canvasY);
-        ctx.strokeStyle = currentColor;
-        ctx.lineWidth = isErasing ? 20 : 3;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.stroke();
-        currentPathRef.current.push({ x: canvasX, y: canvasY });
-      }
-      setHasDrawn(true);
-    } else {
-      isDrawingRef.current = false;
-      if (currentPathRef.current.length > 0) {
-        pathsRef.current.push({
-          points: currentPathRef.current,
-          color: currentColor,
-          isErasing
-        });
-        currentPathRef.current = [];
-      }
-    }
-
-    // Handle gestures
-    if (gesture) {
-      switch (gesture) {
-        case 'colorPicker':
-          setShowColorPicker(true);
-          setColorPickerPosition({ x, y });
-          break;
-        case 'eraser':
-          toggleEraser();
-          break;
-        case 'clear':
-          handleReset();
-          break;
-        default:
-          break;
-      }
-    }
-
-    // Handle shape selection
-    if (isSelecting) {
-      const shapes = document.querySelectorAll('.shape-preview');
-      shapes.forEach((shape, index) => {
-        const shapeRect = shape.getBoundingClientRect();
-        if (x >= shapeRect.left && x <= shapeRect.right &&
-            y >= shapeRect.top && y <= shapeRect.bottom) {
-          handleShapeSelect(index);
-        }
-      });
-    }
-  };
-
   // Initialize canvas context
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -1089,12 +1137,45 @@ const DrawingGame = ({ theme, level, onSuccess }) => {
   }, []);
 
   const handleColorChange = (color) => {
+    // Update state
     setCurrentColor(color);
-    if (context) {
-      context.strokeStyle = color;
+    setIsErasing(false);
+    
+    // Update canvas context
+    const canvas = canvasRef.current;
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        // If we're in the middle of drawing, ensure the new color is applied
+        if (isDrawingRef.current && currentPathRef.current.length > 0) {
+            const lastPoint = currentPathRef.current[currentPathRef.current.length - 1];
+            ctx.beginPath();
+            ctx.moveTo(lastPoint.x, lastPoint.y);
+        }
     }
-    setCurrentTool('pen');
   };
+
+  useEffect(() => {
+    // When drawnPaths changes, redraw everything
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Clear only the user's drawing
+    if (drawnPaths.length === 0) {
+      // If there are no paths, we're clearing the drawing
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (selectedShape !== null) {
+        drawSelectedShape(selectedShape);
+      }
+    }
+  }, [drawnPaths, selectedShape]);
 
   return (
     <div className="drawing-game">
@@ -1133,7 +1214,7 @@ const DrawingGame = ({ theme, level, onSuccess }) => {
           </div>
           <div 
             className="clear-tool"
-            onClick={handleReset}
+            onClick={clearDrawing}
             title="Click to clear drawing"
           >
             🗑️
@@ -1195,42 +1276,19 @@ const DrawingGame = ({ theme, level, onSuccess }) => {
         <h3>Gesture Controls</h3>
         <div className="gesture-instruction">
           <span className="gesture-icon">✌️</span>
-          <span>Two fingers up: Color picker</span>
+          <span>Two fingers up: Select second color</span>
         </div>
         <div className="gesture-instruction">
           <span className="gesture-icon">☝️</span>
-          <span>One finger up: Eraser</span>
+          <span>One finger up: Draw</span>
         </div>
         <div className="gesture-instruction">
           <span className="gesture-icon">✋</span>
           <span>All fingers up: Clear canvas</span>
         </div>
-        <div className="gesture-instruction">
-          <span className="gesture-icon">🤏</span>
-          <span>Pinch: Draw</span>
-        </div>
       </div>
 
-      {showColorPicker && (
-        <div 
-          className="color-picker"
-          style={{
-            left: colorPickerPosition.x,
-            top: colorPickerPosition.y
-          }}
-        >
-          {['#4D96FF', '#FF6B6B', '#6BCB77', '#FFD93D', '#FF8FB1'].map((color) => (
-            <div
-              key={color}
-              className={`color-option ${color === currentColor ? 'selected' : ''}`}
-              style={{ backgroundColor: color }}
-              onClick={() => handleColorChange(color)}
-            />
-          ))}
-        </div>
-      )}
-
-      <HandTracking onHandPosition={handleHandPosition} />
+      <HandTracking onHandPosition={handleHandPosition} currentColor={currentColor} />
     </div>
   );
 };

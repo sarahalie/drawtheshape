@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-const HandTracking = ({ onHandPosition }) => {
+const HandTracking = ({ onHandPosition, currentColor }) => {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const contextRef = useRef(null);
@@ -52,8 +52,8 @@ const HandTracking = ({ onHandPosition }) => {
 
                 // Initialize canvas
                 const canvas = canvasRef.current;
-                canvas.width = 640;
-                canvas.height = 480;
+                canvas.width = 320;
+                canvas.height = 240;
                 contextRef.current = canvas.getContext('2d');
 
                 // Set up hand tracking results handler
@@ -82,8 +82,8 @@ const HandTracking = ({ onHandPosition }) => {
                             setError('Error processing camera frame');
                         }
                     },
-                    width: 640,
-                    height: 480
+                    width: 320,
+                    height: 240
                 });
 
                 await cameraRef.current.start();
@@ -122,6 +122,10 @@ const HandTracking = ({ onHandPosition }) => {
         ctx.save();
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
+        // Mirror the canvas
+        ctx.scale(-1, 1);
+        ctx.translate(-ctx.canvas.width, 0);
+
         // Draw camera feed
         if (results.image) {
             ctx.drawImage(results.image, 0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -131,18 +135,74 @@ const HandTracking = ({ onHandPosition }) => {
             // Draw hand landmarks
             for (const landmarks of results.multiHandLandmarks) {
                 if (window.drawConnectors && window.drawLandmarks && window.HAND_CONNECTIONS) {
+                    // Draw hand connections
                     window.drawConnectors(ctx, landmarks, window.HAND_CONNECTIONS, {
                         color: '#00FF00',
-                        lineWidth: 5
+                        lineWidth: 3
                     });
-                    window.drawLandmarks(ctx, landmarks, {
-                        color: '#FF0000',
-                        lineWidth: 2
-                    });
+                    
+                    // Draw landmarks except index finger tip
+                    for (let i = 0; i < landmarks.length; i++) {
+                        if (i !== 8) { // Skip index fingertip
+                            ctx.beginPath();
+                            ctx.arc(
+                                landmarks[i].x * ctx.canvas.width,
+                                landmarks[i].y * ctx.canvas.height,
+                                4,
+                                0,
+                                2 * Math.PI
+                            );
+                            ctx.fillStyle = '#FF0000';
+                            ctx.fill();
+                        }
+                    }
+
+                    // Draw special indicator for index fingertip
+                    const indexTip = landmarks[8];
+                    ctx.beginPath();
+                    ctx.arc(
+                        indexTip.x * ctx.canvas.width,
+                        indexTip.y * ctx.canvas.height,
+                        8, // Larger radius for the pointer
+                        0,
+                        2 * Math.PI
+                    );
+                    
+                    // Create gradient for pointer indicator using the current color
+                    const gradient = ctx.createRadialGradient(
+                        indexTip.x * ctx.canvas.width,
+                        indexTip.y * ctx.canvas.height,
+                        2,
+                        indexTip.x * ctx.canvas.width,
+                        indexTip.y * ctx.canvas.height,
+                        8
+                    );
+                    gradient.addColorStop(0, currentColor); // Use the current color
+                    gradient.addColorStop(1, currentColor); // Use the current color
+
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+                    ctx.strokeStyle = '#FFFFFF';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
 
                     // Process hand position and gestures
                     const fingerState = getFingerState(landmarks);
                     if (fingerState && onHandPosition) {
+                        // Calculate relative position from center of webcam
+                        const webcamCenterX = ctx.canvas.width / 2;
+                        const webcamCenterY = ctx.canvas.height / 2;
+                        
+                        // Calculate offset from center (-1 to 1 range)
+                        const offsetX = (indexTip.x * ctx.canvas.width - webcamCenterX) / webcamCenterX;
+                        const offsetY = (indexTip.y * ctx.canvas.height - webcamCenterY) / webcamCenterY;
+                        
+                        // Pass the relative offset and current color to the drawing component
+                        fingerState.offsetX = offsetX;
+                        fingerState.offsetY = offsetY;
+                        fingerState.isRelativePosition = true;
+                        fingerState.currentColor = currentColor;
+                        
                         onHandPosition(fingerState);
                     }
                 }
@@ -155,15 +215,15 @@ const HandTracking = ({ onHandPosition }) => {
         if (!landmarks) return null;
 
         // Get fingertip and pip joint positions
-        const indexTip = landmarks[8];
-        const indexPip = landmarks[6];
+        const indexTip = landmarks[8];  // Index fingertip
+        const indexPip = landmarks[6];  // Index PIP joint
         const middleTip = landmarks[12];
         const middlePip = landmarks[10];
         const ringTip = landmarks[16];
         const ringPip = landmarks[14];
         const pinkyTip = landmarks[20];
         const pinkyPip = landmarks[18];
-        const thumbTip = landmarks[4];
+        const wristPoint = landmarks[0]; // Wrist point for reference
 
         // Check if fingers are up (if fingertip is above pip joint)
         const isIndexUp = indexTip.y < indexPip.y;
@@ -171,18 +231,18 @@ const HandTracking = ({ onHandPosition }) => {
         const isRingUp = ringTip.y < ringPip.y;
         const isPinkyUp = pinkyTip.y < pinkyPip.y;
 
-        // Calculate pinch distance
-        const pinchDistance = Math.sqrt(
-            Math.pow(indexTip.x - thumbTip.x, 2) + 
-            Math.pow(indexTip.y - thumbTip.y, 2)
-        );
+        // Count raised fingers
+        const raisedFingers = [isIndexUp, isMiddleUp, isRingUp, isPinkyUp].filter(Boolean).length;
+
+        // Check if index finger is pointing (index up, others down)
+        const isPointing = isIndexUp && !isMiddleUp && !isRingUp && !isPinkyUp;
 
         // Determine gesture
         let gesture = null;
         if (isIndexUp && isMiddleUp && !isRingUp && !isPinkyUp) {
             gesture = "colorPicker";
-        } else if (isIndexUp && !isMiddleUp && !isRingUp && !isPinkyUp) {
-            gesture = "eraser";
+        } else if (isPointing) {
+            gesture = "draw";
         } else if (isIndexUp && isMiddleUp && isRingUp && isPinkyUp) {
             gesture = "clear";
         }
@@ -190,9 +250,11 @@ const HandTracking = ({ onHandPosition }) => {
         return {
             x: indexTip.x * canvasRef.current.width,
             y: indexTip.y * canvasRef.current.height,
-            isDrawing: pinchDistance < 0.1,
-            isSelecting: pinchDistance < 0.08,
-            gesture
+            isDrawing: isPointing,
+            isSelecting: isPointing && indexTip.y < wristPoint.y - 0.3,
+            gesture,
+            raisedFingers,
+            currentColor: currentColor
         };
     };
 
@@ -223,10 +285,12 @@ const HandTracking = ({ onHandPosition }) => {
                 style={{
                     position: 'fixed',
                     right: '20px',
-                    top: '20px',
+                    bottom: '20px',
                     borderRadius: '10px',
                     border: '3px solid #4D96FF',
-                    zIndex: 100
+                    zIndex: 100,
+                    transform: 'scale(1)',
+                    transition: 'transform 0.3s ease'
                 }}
             />
         </div>
