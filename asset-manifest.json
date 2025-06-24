@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/drawtheshape/static/css/main.5aa06e5a.css",
-    "main.js": "/drawtheshape/static/js/main.8e08f8cd.js",
+    "main.js": "/drawtheshape/static/js/main.1b2dc436.js",
     "static/js/885.8a0dfc92.chunk.js": "/drawtheshape/static/js/885.8a0dfc92.chunk.js",
     "static/js/453.46249bf2.chunk.js": "/drawtheshape/static/js/453.46249bf2.chunk.js",
     "static/media/OpenDyslexic-BoldItalic.otf": "/drawtheshape/static/media/OpenDyslexic-BoldItalic.51781d5c5f73576d2f8c.otf",
@@ -10,12 +10,12 @@
     "static/media/OpenDyslexic-Bold.otf": "/drawtheshape/static/media/OpenDyslexic-Bold.1082cfdbbc04743cc3f1.otf",
     "index.html": "/drawtheshape/index.html",
     "main.5aa06e5a.css.map": "/drawtheshape/static/css/main.5aa06e5a.css.map",
-    "main.8e08f8cd.js.map": "/drawtheshape/static/js/main.8e08f8cd.js.map",
+    "main.1b2dc436.js.map": "/drawtheshape/static/js/main.1b2dc436.js.map",
     "885.8a0dfc92.chunk.js.map": "/drawtheshape/static/js/885.8a0dfc92.chunk.js.map",
     "453.46249bf2.chunk.js.map": "/drawtheshape/static/js/453.46249bf2.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.5aa06e5a.css",
-    "static/js/main.8e08f8cd.js"
+    "static/js/main.1b2dc436.js"
   ]
 }
