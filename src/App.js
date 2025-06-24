@@ -132,7 +132,7 @@ function App() {
                 style={{ '--card-color': '#2962ff' }}
               >
                 <div className="theme-card-image">
-                  <img src="t1.png" alt="Geometric shapes" />
+                  <img src={process.env.PUBLIC_URL + '/t1.png'} alt="Geometric shapes" />
                 </div>
                 <h3>Geometry</h3>
               </div>
@@ -142,7 +142,7 @@ function App() {
                 style={{ '--card-color': '#00c853' }}
               >
                 <div className="theme-card-image">
-                  <img src="t2.png" alt="Nature shapes" />
+                  <img src={process.env.PUBLIC_URL + '/t2.png'} alt="Nature shapes" />
                 </div>
                 <h3>Nature</h3>
               </div>
@@ -152,7 +152,7 @@ function App() {
                 style={{ '--card-color': '#aa00ff' }}
               >
                 <div className="theme-card-image">
-                  <img src="/t3.png" alt="Abstract shapes" />
+                  <img src={process.env.PUBLIC_URL + '/t3.png'} alt="Abstract shapes" />
                 </div>
                 <h3>Abstract</h3>
               </div>
