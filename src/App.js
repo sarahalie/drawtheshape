@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import './App.css';
 import DrawingGame from './components/DrawingGame';
 
@@ -22,11 +22,54 @@ function App() {
   const [selectedTheme, setSelectedTheme] = useState(null);
   const [currentLevel, setCurrentLevel] = useState(1);
   const [earnedBadges, setEarnedBadges] = useState([]);
-  const [isMusicPlaying, setIsMusicPlaying] = useState(true);
-  const [volume, setVolume] = useState(0.5); // Default volume at 50%
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const [volume, setVolume] = useState(0.5);
   const [showVolumeControl, setShowVolumeControl] = useState(false);
   const [showCompletionMessage, setShowCompletionMessage] = useState(false);
-  const audioRef = useRef(new Audio('/bgm.mp3'));
+  const audioRef = useRef(new Audio(process.env.PUBLIC_URL + '/bgm.mp3'));
+
+  // Initialize audio settings
+  useEffect(() => {
+    const audio = audioRef.current;
+    audio.volume = volume;
+    audio.loop = true;
+
+    // Add click event listener to start audio (browser requirement)
+    const handleClick = () => {
+      if (!isMusicPlaying) {
+        audio.play()
+          .then(() => {
+            setIsMusicPlaying(true);
+          })
+          .catch(error => {
+            console.log('Audio playback failed:', error);
+          });
+      }
+      document.removeEventListener('click', handleClick);
+    };
+
+    document.addEventListener('click', handleClick);
+
+    return () => {
+      audio.pause();
+      audio.currentTime = 0;
+      document.removeEventListener('click', handleClick);
+    };
+  }, []);
+
+  // Handle volume changes
+  useEffect(() => {
+    audioRef.current.volume = volume;
+  }, [volume]);
+
+  // Handle music playing state changes
+  useEffect(() => {
+    if (isMusicPlaying) {
+      audioRef.current.play().catch(console.error);
+    } else {
+      audioRef.current.pause();
+    }
+  }, [isMusicPlaying]);
 
   const handleMainMenuClick = (option) => {
     switch (option) {

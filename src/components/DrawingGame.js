@@ -395,8 +395,8 @@ const DrawingGame = ({ theme, level, onSuccess }) => {
   const [hasDrawn, setHasDrawn] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [earnedBadges, setEarnedBadges] = useState([]);
-  const [playWow] = useSound('/wowsnd.mp3', { volume: 0.5 });
-  const [playFailure] = useSound('/failure.mp3', { volume: 0.5 });
+  const [playWow] = useSound(process.env.PUBLIC_URL + '/wowsnd.mp3', { volume: 0.5 });
+  const [playFailure] = useSound(process.env.PUBLIC_URL + '/failure.mp3', { volume: 0.5 });
   const [lastPosition, setLastPosition] = useState(null);
   const [startTime, setStartTime] = useState(null);
   const [timeSpent, setTimeSpent] = useState(0);
